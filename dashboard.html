@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{# ── Page Header ─────────────────────────────────────────────────────────── #}
+<div class="page-header">
+  <div>
+    <h1 class="page-heading">Overview</h1>
+    <p class="page-sub">Welcome back — here's what's happening today.</p>
+  </div>
+</div>
+
+{# ── Stat Cards ──────────────────────────────────────────────────────────── #}
+<div class="stats-grid">
+
+  {# Card 1: Total Donors #}
+  <div class="stat-card stat-card--red anim-rise" style="--delay:.05s">
+    <div class="stat-card__glow"></div>
+    <div class="stat-card__icon">
+      <i class="bi bi-people-fill"></i>
+    </div>
+    <div class="stat-card__content">
+      <p class="stat-card__label">Total Donors</p>
+      <h2 class="stat-card__value">{{ donors_count }}</h2>
+      <p class="stat-card__note">Registered in system</p>
+    </div>
+    <a href="{{ url_for('donors') }}" class="stat-card__link">
+      View all <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+
+  {# Card 2: Available Units #}
+  <div class="stat-card stat-card--dark anim-rise" style="--delay:.1s">
+    <div class="stat-card__glow"></div>
+    <div class="stat-card__icon">
+      <i class="bi bi-droplet-half"></i>
+    </div>
+    <div class="stat-card__content">
+      <p class="stat-card__label">Available Units</p>
+      <h2 class="stat-card__value">{{ units_count }}</h2>
+      <p class="stat-card__note">Total blood units in stock</p>
+    </div>
+    <a href="{{ url_for('inventory') }}" class="stat-card__link">
+      View stock <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+
+  {# Card 3: Blood Types #}
+  <div class="stat-card stat-card--accent anim-rise" style="--delay:.15s">
+    <div class="stat-card__glow"></div>
+    <div class="stat-card__icon">
+      <i class="bi bi-activity"></i>
+    </div>
+    <div class="stat-card__content">
+      <p class="stat-card__label">Blood Types Stocked</p>
+      <h2 class="stat-card__value">{{ blood_types }}<span style="font-size:1rem;opacity:.6">/8</span></h2>
+      <p class="stat-card__note">Types with available units</p>
+    </div>
+    <a href="{{ url_for('inventory') }}" class="stat-card__link">
+      Manage <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+
+</div>{# /.stats-grid #}
+
+
+{# ── Bottom Grid: Form + Recent Donors ───────────────────────────────────── #}
+<div class="dashboard-grid">
+
+  {# ── Add Donor Form ─────────────────────────────────────────────────── #}
+  <div class="panel anim-rise" style="--delay:.2s">
+    <div class="panel__head">
+      <span class="panel__icon"><i class="bi bi-person-plus-fill"></i></span>
+      <h3 class="panel__title">Register New Donor</h3>
+    </div>
+    <div class="panel__body">
+      <form action="{{ url_for('add_donor') }}" method="POST" novalidate id="donorForm">
+
+        <div class="field-row">
+          {# Full Name #}
+          <div class="field-group">
+            <label class="field-label" for="name">Full Name <span class="req">*</span></label>
+            <div class="field-wrap">
+              <i class="bi bi-person field-ico"></i>
+              <input type="text" id="name" name="name" class="field-input"
+                     placeholder="e.g. Ravi Sharma" required maxlength="80">
+            </div>
+          </div>
+          {# Age #}
+          <div class="field-group">
+            <label class="field-label" for="age">Age <span class="req">*</span></label>
+            <div class="field-wrap">
+              <i class="bi bi-calendar2 field-ico"></i>
+              <input type="number" id="age" name="age" class="field-input"
+                     placeholder="18 – 65" min="18" max="65" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          {# Blood Group #}
+          <div class="field-group">
+            <label class="field-label" for="blood">Blood Group <span class="req">*</span></label>
+            <div class="field-wrap">
+              <i class="bi bi-droplet field-ico"></i>
+              <select id="blood" name="blood" class="field-input field-select" required>
+                <option value="" disabled selected>Select type</option>
+                {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+                  <option value="{{ bg }}">{{ bg }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {# Phone #}
+          <div class="field-group">
+            <label class="field-label" for="phone">Phone <span class="req">*</span></label>
+            <div class="field-wrap">
+              <i class="bi bi-telephone field-ico"></i>
+              <input type="tel" id="phone" name="phone" class="field-input"
+                     placeholder="+91 98765 43210" required maxlength="20">
+            </div>
+          </div>
+        </div>
+
+        {# Address (full width) #}
+        <div class="field-group">
+          <label class="field-label" for="address">Address</label>
+          <div class="field-wrap field-wrap--textarea">
+            <i class="bi bi-geo-alt field-ico"></i>
+            <textarea id="address" name="address" class="field-input field-textarea"
+                      placeholder="Full address (optional)" rows="2" maxlength="200"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">
+            <i class="bi bi-plus-circle-fill"></i>
+            Add Donor
+          </button>
+          <button type="reset" class="btn-ghost">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Reset
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>{# /.panel (form) #}
+
+
+  {# ── Recent Donors Preview ─────────────────────────────────────────── #}
+  <div class="panel anim-rise" style="--delay:.25s">
+    <div class="panel__head">
+      <span class="panel__icon"><i class="bi bi-clock-history"></i></span>
+      <h3 class="panel__title">Recent Donors</h3>
+      <a href="{{ url_for('donors') }}" class="panel__action">
+        View all <i class="bi bi-chevron-right"></i>
+      </a>
+    </div>
+    <div class="panel__body p-0">
+
+      {% if recent_donors %}
+        <ul class="recent-list">
+          {% for d in recent_donors %}
+          <li class="recent-item">
+            <div class="recent-avatar">
+              {{ d['name'][0]|upper }}
+            </div>
+            <div class="recent-info">
+              <p class="recent-name">{{ d['name'] }}</p>
+              <p class="recent-meta">Age {{ d['age'] }} &nbsp;·&nbsp; {{ d['phone'] }}</p>
+            </div>
+            <div class="recent-badge">
+              {% set bg = d['blood'] %}
+              <span class="blood-badge
+                {%- if bg in ['A+','A-'] %} bb--a
+                {%- elif bg in ['B+','B-'] %} bb--b
+                {%- elif bg in ['AB+','AB-'] %} bb--ab
+                {%- else %} bb--o{%- endif %}">
+                {{ bg }}
+              </span>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        {# Empty state #}
+        <div class="empty-state">
+          <i class="bi bi-inbox empty-state__icon"></i>
+          <p class="empty-state__title">No donors yet</p>
+          <p class="empty-state__sub">Use the form to add your first donor.</p>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>{# /.panel (recent) #}
+
+</div>{# /.dashboard-grid #}
+
+{% endblock %}

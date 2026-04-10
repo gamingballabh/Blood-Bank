@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+
+{% block content %}
+
+{# ── Page Header ─────────────────────────────────────────────────────────── #}
+<div class="page-header">
+  <div>
+    <h1 class="page-heading">Blood Inventory</h1>
+    <p class="page-sub">Monitor and manage blood stock levels across all groups.</p>
+  </div>
+  <div class="page-header__stat">
+    <span class="header-stat-value">{{ total_units }}</span>
+    <span class="header-stat-label">total units</span>
+  </div>
+</div>
+
+
+{# ── Add Stock Form ──────────────────────────────────────────────────────── #}
+<div class="panel anim-rise" style="--delay:.05s">
+  <div class="panel__head">
+    <span class="panel__icon"><i class="bi bi-plus-square-fill"></i></span>
+    <h3 class="panel__title">Add Blood Stock</h3>
+  </div>
+  <div class="panel__body">
+    <form action="{{ url_for('add_inventory') }}" method="POST" class="inv-form">
+      <div class="inv-form__row">
+
+        <div class="field-group">
+          <label class="field-label" for="inv_blood">Blood Group <span class="req">*</span></label>
+          <div class="field-wrap">
+            <i class="bi bi-droplet field-ico"></i>
+            <select id="inv_blood" name="blood" class="field-input field-select" required>
+              <option value="" disabled selected>Select blood group</option>
+              {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+                <option value="{{ bg }}">{{ bg }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="inv_units">Units to Add <span class="req">*</span></label>
+          <div class="field-wrap">
+            <i class="bi bi-123 field-ico"></i>
+            <input type="number" id="inv_units" name="units" class="field-input"
+                   placeholder="e.g. 10" min="1" max="999" required>
+          </div>
+        </div>
+
+        <div class="field-group field-group--action">
+          <label class="field-label">&nbsp;</label>
+          <button type="submit" class="btn-primary w-100">
+            <i class="bi bi-plus-circle-fill"></i> Add Stock
+          </button>
+        </div>
+
+      </div>
+      <p class="form-hint">
+        <i class="bi bi-info-circle"></i>
+        Adding units to an existing blood group will increase its current count.
+      </p>
+    </form>
+  </div>
+</div>
+
+
+{# ── Inventory Table ─────────────────────────────────────────────────────── #}
+<div class="panel anim-rise" style="--delay:.1s">
+  <div class="panel__head">
+    <span class="panel__icon"><i class="bi bi-archive-fill"></i></span>
+    <h3 class="panel__title">Current Stock</h3>
+  </div>
+
+  <div class="panel__body p-0">
+
+    {% if stock %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:48px">#</th>
+              <th>Blood Group</th>
+              <th>Units Available</th>
+              <th style="width:220px">Stock Level</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in stock %}
+
+            {# Determine level class and label #}
+            {% if item['units'] < 5 %}
+              {% set level_class = 'lvl--critical' %}
+              {% set level_bar   = 'bar--red' %}
+              {% set level_label = 'Critical' %}
+              {% set level_pct   = [item['units'] * 10, 100]|min %}
+            {% elif item['units'] < 15 %}
+              {% set level_class = 'lvl--moderate' %}
+              {% set level_bar   = 'bar--amber' %}
+              {% set level_label = 'Moderate' %}
+              {% set level_pct   = [item['units'] * 5, 100]|min %}
+            {% else %}
+              {% set level_class = 'lvl--good' %}
+              {% set level_bar   = 'bar--green' %}
+              {% set level_label = 'Sufficient' %}
+              {% set level_pct   = 100 %}
+            {% endif %}
+
+            <tr class="table-row">
+              <td class="td-num">{{ loop.index }}</td>
+
+              <td>
+                {% set bg = item['blood'] %}
+                <span class="blood-badge blood-badge--lg
+                  {%- if bg in ['A+','A-'] %} bb--a
+                  {%- elif bg in ['B+','B-'] %} bb--b
+                  {%- elif bg in ['AB+','AB-'] %} bb--ab
+                  {%- else %} bb--o{%- endif %}">
+                  {{ bg }}
+                </span>
+              </td>
+
+              <td>
+                <strong class="{{ level_class }}">{{ item['units'] }}</strong>
+                <span style="color:var(--gray-400);font-size:.85rem"> units</span>
+              </td>
+
+              <td>
+                <div class="level-bar">
+                  <div class="level-bar__fill {{ level_bar }}"
+                       style="width:{{ level_pct }}%"></div>
+                </div>
+              </td>
+
+              <td>
+                <span class="status-pill {{ level_class }}">
+                  {% if level_label == 'Critical' %}
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  {% elif level_label == 'Moderate' %}
+                    <i class="bi bi-dash-circle-fill"></i>
+                  {% else %}
+                    <i class="bi bi-check-circle-fill"></i>
+                  {% endif %}
+                  {{ level_label }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# Legend #}
+      <div class="inv-legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> &lt;5 units = Critical</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> 5–14 units = Moderate</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> 15+ units = Sufficient</span>
+      </div>
+
+    {% else %}
+      {# Empty state #}
+      <div class="empty-state">
+        <i class="bi bi-database-slash empty-state__icon"></i>
+        <p class="empty-state__title">No stock records yet</p>
+        <p class="empty-state__sub">Use the form above to add your first blood stock entry.</p>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}
