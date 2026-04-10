@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Donors{% endblock %}
+{% block page_title %}Donors{% endblock %}
+
+{% block content %}
+
+{# ── Page Header ─────────────────────────────────────────────────────────── #}
+<div class="page-header">
+  <div>
+    <h1 class="page-heading">Donor Registry</h1>
+    <p class="page-sub">
+      {% if donors %}
+        {{ donors|length }} donor{{ 's' if donors|length != 1 else '' }} found
+        {%- if search %} matching "<strong>{{ search }}</strong>"{% endif %}
+        {%- if blood_filter %} · Blood group <strong>{{ blood_filter }}</strong>{% endif %}
+      {% else %}
+        No donors match your filters.
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+
+{# ── Search + Filter Bar ─────────────────────────────────────────────────── #}
+<div class="filter-bar anim-rise" style="--delay:.05s">
+  <form method="GET" action="{{ url_for('donors') }}" class="filter-form">
+
+    <div class="field-wrap filter-search">
+      <i class="bi bi-search field-ico"></i>
+      <input type="text" name="q" class="field-input" placeholder="Search by name or phone…"
+             value="{{ search }}">
+    </div>
+
+    <div class="field-wrap" style="min-width:150px">
+      <i class="bi bi-droplet field-ico"></i>
+      <select name="blood" class="field-input field-select">
+        <option value="">All groups</option>
+        {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+          <option value="{{ bg }}" {% if blood_filter == bg %}selected{% endif %}>{{ bg }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="btn-primary btn-sm">
+      <i class="bi bi-funnel-fill"></i> Filter
+    </button>
+
+    {% if search or blood_filter %}
+      <a href="{{ url_for('donors') }}" class="btn-ghost btn-sm">
+        <i class="bi bi-x-circle"></i> Clear
+      </a>
+    {% endif %}
+
+  </form>
+</div>
+
+
+{# ── Donors Table ────────────────────────────────────────────────────────── #}
+<div class="panel anim-rise" style="--delay:.1s">
+  <div class="panel__head">
+    <span class="panel__icon"><i class="bi bi-people-fill"></i></span>
+    <h3 class="panel__title">All Donors</h3>
+    <span class="panel__count">{{ donors|length }}</span>
+  </div>
+
+  <div class="panel__body p-0">
+
+    {% if donors %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:48px">#</th>
+              <th>Donor</th>
+              <th>Age</th>
+              <th>Blood</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Date Added</th>
+              <th style="width:60px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in donors %}
+            <tr class="table-row">
+              <td class="td-num">{{ loop.index }}</td>
+
+              {# Donor name + avatar #}
+              <td>
+                <div class="donor-cell">
+                  <span class="d-avatar">{{ d['name'][0]|upper }}</span>
+                  <span class="d-name">{{ d['name'] }}</span>
+                </div>
+              </td>
+
+              <td>{{ d['age'] }}</td>
+
+              {# Color-coded blood badge #}
+              <td>
+                {% set bg = d['blood'] %}
+                <span class="blood-badge
+                  {%- if bg in ['A+','A-'] %} bb--a
+                  {%- elif bg in ['B+','B-'] %} bb--b
+                  {%- elif bg in ['AB+','AB-'] %} bb--ab
+                  {%- else %} bb--o{%- endif %}">
+                  {{ bg }}
+                </span>
+              </td>
+
+              <td>{{ d['phone'] }}</td>
+
+              <td class="td-address">
+                {{ d['address'] if d['address'] else '—' }}
+              </td>
+
+              <td>{{ d['added_on'] or '—' }}</td>
+
+              {# Delete action #}
+              <td>
+                <form action="{{ url_for('delete_donor', donor_id=d['id']) }}"
+                      method="POST"
+                      onsubmit="return confirm('Remove {{ d['name'] }}?')">
+                  <button type="submit" class="btn-icon btn-icon--danger"
+                          title="Remove donor">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>{# /.table-wrap #}
+
+    {% else %}
+      {# Empty state #}
+      <div class="empty-state">
+        {% if search or blood_filter %}
+          <i class="bi bi-search empty-state__icon"></i>
+          <p class="empty-state__title">No results found</p>
+          <p class="empty-state__sub">Try adjusting your search or filter.</p>
+          <a href="{{ url_for('donors') }}" class="btn-ghost">Clear filters</a>
+        {% else %}
+          <i class="bi bi-person-slash empty-state__icon"></i>
+          <p class="empty-state__title">No donors registered yet</p>
+          <p class="empty-state__sub">Add your first donor from the dashboard.</p>
+          <a href="{{ url_for('dashboard') }}" class="btn-primary">
+            <i class="bi bi-plus-circle-fill"></i> Add Donor
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}
